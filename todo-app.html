@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>My To-Do Lists</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef1f0;--panel:#fff;--ink:#16242c;--muted:#5d6d75;--line:#d5dcdc;--accent:#2b4bd8;--accent-ink:#fff;--done:#7d8b91;--danger:#b4322a;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10181c;--panel:#18232a;--ink:#e8eef0;--muted:#9aaab1;--line:#2b3a42;--accent:#7f95ff;--accent-ink:#10181c;--done:#6c7b82;--danger:#ff8b80;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#10181c;--panel:#18232a;--ink:#e8eef0;--muted:#9aaab1;--line:#2b3a42;--accent:#7f95ff;--accent-ink:#10181c;--done:#6c7b82;--danger:#ff8b80;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.app{max-width:960px;margin:0 auto;padding:24px 16px;display:grid;grid-template-columns:240px 1fr;gap:24px}
+.side h1{font-size:1.6rem;font-weight:800;margin:0 0 16px;letter-spacing:-.02em}
+#lists{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.li{display:flex;justify-content:space-between;align-items:center;gap:8px;text-align:left;padding:10px 12px;border:1px solid transparent;border-radius:10px;background:transparent}
+.li:hover{background:var(--panel)}
+.li.on{background:var(--panel);border-color:var(--accent);font-weight:600}
+.li span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.li b{min-width:26px;text-align:center;font-size:.85rem;padding:1px 8px;border-radius:99px;background:var(--bg);color:var(--muted)}
+.row{display:flex;gap:8px}
+.row input{flex:1;min-width:0}
+input[type=text]{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+.btn{padding:10px 14px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.btn.danger{color:var(--danger);border-color:var(--danger)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+main{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;min-width:0}
+.head{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+#listName{flex:1;min-width:0;font-size:1.6rem;font-weight:800;letter-spacing:-.02em;border:1px solid transparent;border-radius:8px;padding:2px 6px;background:transparent}
+#listName:hover{border-color:var(--line)}
+.progress{height:6px;border-radius:99px;background:var(--bg);overflow:hidden}
+#bar{display:block;height:100%;width:0;background:var(--accent);transition:width .25s}
+#count{margin:6px 0 16px;color:var(--muted);font-size:.9rem}
+.filters{display:flex;gap:6px;margin:16px 0 8px;flex-wrap:wrap;align-items:center}
+.filters .btn{padding:6px 12px;border-radius:99px}
+.filters .btn[aria-pressed="true"]{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+.filters .spacer{flex:1}
+#tasks{list-style:none;margin:0;padding:0}
+.task{display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--line)}
+.task input[type=checkbox]{width:20px;height:20px;accent-color:var(--accent);flex:none}
+.t{flex:1;min-width:0;overflow-wrap:anywhere}
+.t.done{color:var(--done);background:linear-gradient(currentColor,currentColor) 0 58%/100% 2px no-repeat}
+.t.done.just{animation:strike .3s ease-out}
+@keyframes strike{from{background-size:0 2px}to{background-size:100% 2px}}
+.small{border:0;background:transparent;color:var(--muted);padding:4px 8px;border-radius:8px;font-size:.9rem}
+.small:hover{color:var(--ink);background:var(--bg)}
+.small.del:hover{color:var(--danger)}
+.editin{flex:1;min-width:0}
+.empty{padding:28px 4px;color:var(--muted)}
+@media (max-width:720px){
+ .app{grid-template-columns:1fr;gap:16px}
+ #lists{flex-direction:row;overflow-x:auto}
+ .li{flex:none}
+}
+@media (prefers-reduced-motion:reduce){#bar{transition:none}.t.done.just{animation:none}}
+</style>
+</head>
+<body>
+<div class="app">
+ <aside class="side">
+  <h1>My lists</h1>
+  <nav id="lists" aria-label="Your lists"></nav>
+  <form id="newList" class="row">
+   <input type="text" id="newListName" placeholder="New list name" aria-label="New list name" maxlength="40">
+   <button class="btn" type="submit">Add list</button>
+  </form>
+ </aside>
+ <main>
+  <div class="head">
+   <input type="text" id="listName" aria-label="List name" maxlength="40">
+   <button class="btn danger" id="delList" type="button">Delete list</button>
+  </div>
+  <div class="progress"><span id="bar"></span></div>
+  <p id="count"></p>
+  <form id="addTask" class="row">
+   <input type="text" id="taskText" placeholder="Add a task" aria-label="New task" maxlength="200" autocomplete="off">
+   <button class="btn primary" type="submit">Add task</button>
+  </form>
+  <div class="filters" role="group" aria-label="Filter tasks">
+   <button class="btn" data-filter="all">All</button>
+   <button class="btn" data-filter="active">To do</button>
+   <button class="btn" data-filter="done">Done</button>
+   <span class="spacer"></span>
+   <button class="btn" id="clearDone" type="button">Clear completed</button>
+  </div>
+  <ul id="tasks"></ul>
+ </main>
+</div>
+<script>
+(function(){
+var KEY='todo-lists-v1';
+var uid=function(){return Math.random().toString(36).slice(2,9)};
+function load(){
+ try{var r=localStorage.getItem(KEY);if(r){var d=JSON.parse(r);if(d&&Array.isArray(d.lists)&&d.lists.length)return d}}catch(e){}
+ return{lists:[{id:uid(),name:'My tasks',tasks:[]}],active:null,filter:'all'};
+}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+var S=load();
+if(!S.lists.some(function(l){return l.id===S.active}))S.active=S.lists[0].id;
+if(['all','active','done'].indexOf(S.filter)<0)S.filter='all';
+var editing=null,armed=false,armTimer=null,just=null;
+var $=function(id){return document.getElementById(id)};
+var esc=function(s){return String(s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})};
+var cur=function(){return S.lists.filter(function(l){return l.id===S.active})[0]};
+
+function render(){
+ var l=cur();
+ $('lists').innerHTML=S.lists.map(function(x){
+  var n=x.tasks.filter(function(t){return !t.done}).length;
+  return '<button class="li'+(x.id===l.id?' on':'')+'" data-list="'+x.id+'"><span>'+esc(x.name)+'</span><b>'+n+'</b></button>';
+ }).join('');
+ if(document.activeElement!==$('listName'))$('listName').value=l.name;
+ var total=l.tasks.length,done=l.tasks.filter(function(t){return t.done}).length;
+ $('bar').style.width=(total?done/total*100:0)+'%';
+ $('count').textContent=total?done+' of '+total+' done':'No tasks yet';
+ document.querySelectorAll('[data-filter]').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.filter===S.filter))});
+ $('clearDone').disabled=!done;
+ $('delList').disabled=S.lists.length<2;
+ $('delList').title=S.lists.length<2?'Keep at least one list':'';
+ $('delList').textContent=armed?'Confirm delete':'Delete list';
+ var vis=l.tasks.filter(function(t){return S.filter==='all'||(S.filter==='done')===t.done});
+ if(!vis.length){
+  var msg=!total?'Add your first task above.':S.filter==='active'?'Nothing left to do.':'No completed tasks yet.';
+  $('tasks').innerHTML='<li class="empty">'+msg+'</li>';
+ }else{
+  $('tasks').innerHTML=vis.map(function(t){
+   if(editing===t.id)return '<li class="task"><input type="text" class="editin" data-edit="'+t.id+'" value="'+esc(t.text)+'" aria-label="Edit task" maxlength="200"><button class="small" data-act="save" data-id="'+t.id+'">Save</button></li>';
+   return '<li class="task"><input type="checkbox" id="c-'+t.id+'" data-act="toggle" data-id="'+t.id+'"'+(t.done?' checked':'')+'><label for="c-'+t.id+'" class="t'+(t.done?' done':'')+(just===t.id?' just':'')+'">'+esc(t.text)+'</label><button class="small" data-act="edit" data-id="'+t.id+'">Edit</button><button class="small del" data-act="del" data-id="'+t.id+'" aria-label="Delete task">Delete</button></li>';
+  }).join('');
+ }
+ just=null;
+ var ei=document.querySelector('.editin');
+ if(ei&&document.activeElement!==ei){ei.focus();ei.setSelectionRange(ei.value.length,ei.value.length)}
+}
+function disarm(){armed=false;clearTimeout(armTimer)}
+function commit(){save();render()}
+
+$('lists').addEventListener('click',function(e){
+ var b=e.target.closest('[data-list]');if(!b)return;
+ S.active=b.dataset.list;editing=null;disarm();commit();
+});
+$('newList').addEventListener('submit',function(e){
+ e.preventDefault();
+ var v=$('newListName').value.trim();if(!v)return;
+ var l={id:uid(),name:v,tasks:[]};S.lists.push(l);S.active=l.id;S.filter='all';editing=null;disarm();
+ $('newListName').value='';commit();$('taskText').focus();
+});
+$('listName').addEventListener('input',function(){
+ cur().name=this.value;save();
+ var on=document.querySelector('.li.on span');if(on)on.textContent=this.value;
+});
+$('listName').addEventListener('blur',function(){
+ if(!this.value.trim())cur().name='Untitled list';
+ cur().name=cur().name.trim();commit();
+});
+$('delList').addEventListener('click',function(){
+ if(S.lists.length<2)return;
+ if(!armed){armed=true;armTimer=setTimeout(function(){armed=false;render()},4000);render();return}
+ var id=S.active;S.lists=S.lists.filter(function(l){return l.id!==id});
+ S.active=S.lists[0].id;editing=null;disarm();commit();
+});
+$('addTask').addEventListener('submit',function(e){
+ e.preventDefault();
+ var v=$('taskText').value.trim();if(!v)return;
+ cur().tasks.unshift({id:uid(),text:v,done:false});
+ $('taskText').value='';commit();
+});
+document.querySelector('.filters').addEventListener('click',function(e){
+ var b=e.target.closest('[data-filter]');if(!b)return;
+ S.filter=b.dataset.filter;editing=null;commit();
+});
+$('clearDone').addEventListener('click',function(){
+ var l=cur();l.tasks=l.tasks.filter(function(t){return !t.done});commit();
+});
+function findTask(id){return cur().tasks.filter(function(t){return t.id===id})[0]}
+function saveEdit(id,val){
+ var t=findTask(id);val=val.trim();
+ if(t&&val)t.text=val;
+ editing=null;commit();
+}
+$('tasks').addEventListener('change',function(e){
+ var c=e.target.closest('[data-act="toggle"]');if(!c)return;
+ var t=findTask(c.dataset.id);t.done=c.checked;just=t.done?t.id:null;commit();
+});
+$('tasks').addEventListener('click',function(e){
+ var b=e.target.closest('button[data-act]');if(!b)return;
+ var id=b.dataset.id,a=b.dataset.act;
+ if(a==='edit'){editing=id;render()}
+ else if(a==='save'){var inp=document.querySelector('.editin');saveEdit(id,inp?inp.value:'')}
+ else if(a==='del'){var l=cur();l.tasks=l.tasks.filter(function(t){return t.id!==id});commit()}
+});
+$('tasks').addEventListener('keydown',function(e){
+ var inp=e.target.closest('.editin');if(!inp)return;
+ if(e.key==='Enter'){e.preventDefault();saveEdit(inp.dataset.edit,inp.value)}
+ else if(e.key==='Escape'){editing=null;render()}
+});
+render();
+})();
+</script>
+</body>
+</html>
